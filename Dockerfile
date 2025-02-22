@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r analytics/requirements.txt
 EXPOSE 5000
 
 # Define environment variable for Flask (or adjust if using another framework)
-ENV FLASK_APP=analytics/app.py  
+ENV FLASK_APP=analytics.app  
 ENV FLASK_RUN_HOST=0.0.0.0
 
 # Run the application
