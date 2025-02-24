@@ -2,10 +2,10 @@
 FROM python:3.9-slim
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /analytics
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy the current directory contents into the container at /analytics
+COPY . /analytics
 
 # Install dependencies from the 'analytics' folder's requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
@@ -19,3 +19,4 @@ ENV FLASK_RUN_HOST=0.0.0.0
 
 # Run the application
 CMD ["flask", "run"]
+
