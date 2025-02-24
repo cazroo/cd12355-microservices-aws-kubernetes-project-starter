@@ -1,9 +1,3 @@
-here are all my files at the moment, please review to make sure they will work for deploying a microservices-based coworking space management application on **AWS EKS** using **Kubernetes**. The app consists of a PostgreSQL database and a backend service that interacts with it. 
-
-The deployment uses **Docker** for containerization, **Amazon ECR** for image storage, and **Kubernetes ConfigMaps & Secrets** to manage configuration and sensitive data. We ensure scalability, high availability, and automated rollouts using Kubernetes best practices.
-:
-
-Dockerfile =
 # Use an official Python runtime as a parent image
 FROM python:3.10-slim-buster
 
