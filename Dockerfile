@@ -8,7 +8,7 @@ WORKDIR /analytics
 COPY . /analytics
 
 # Install dependencies from the 'analytics' folder's requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /analytics/requirements.txt
 
 # Expose the port the app runs on (adjust to your app's port, default for Flask is 5000)
 EXPOSE 5000
