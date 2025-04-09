@@ -22,6 +22,7 @@ phases:
     commands:
       - echo Building the Docker image...
       - docker build -t $IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER .
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
 
   post_build:
     commands:
@@ -32,7 +33,7 @@ phases:
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_REPO_NAME:$CODEBUILD_BUILD_NUMBER
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
       - echo Deploying to Kubernetes...
-      - kubectl apply -f deployment/configmap.yaml --validate=false
+      - kubectl apply -f deployment/configmap.yaml
       - kubectl apply -f deployment/secret.yaml
       - kubectl apply -f deployment/coworking.yaml
       - kubectl rollout restart deployment/coworking
