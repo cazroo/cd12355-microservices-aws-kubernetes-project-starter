@@ -12,7 +12,7 @@ spec:
     port: 5153
     targetPort: 5153
 ---
-apiVersion: apps/v1
+aapiVersion: apps/v1
 kind: Deployment
 metadata:
   name: coworking
@@ -74,3 +74,5 @@ spec:
               name: project3-secrets
               key: password
       restartPolicy: Always
+  imagePullSecrets:
+  - name: ecr-secret
