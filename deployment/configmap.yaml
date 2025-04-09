@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: coworking-config
+  name: project3-config-map
 data:
   DB_NAME: mydb
   DB_USER: myuser

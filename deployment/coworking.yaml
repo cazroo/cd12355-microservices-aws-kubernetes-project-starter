@@ -1,3 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: coworking
+spec:
+  type: LoadBalancer
+  selector:
+    service: coworking
+  ports:
+  - name: "5153"
+    protocol: TCP
+    port: 5153
+    targetPort: 5153
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,8 +32,6 @@ spec:
       - name: coworking
         image: 031750745573.dkr.ecr.us-east-1.amazonaws.com/coworking-analytics-repository:latest
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 5153
         livenessProbe:
           httpGet:
             path: /health_check
@@ -34,31 +46,31 @@ spec:
           timeoutSeconds: 5
         envFrom:
         - configMapRef:
-            name: coworking-config
+            name: project3-config-map
         env:
         - name: DB_NAME
           valueFrom:
             configMapKeyRef:
-              name: coworking-config
+              name: project3-config-map
               key: DB_NAME
         - name: DB_USERNAME
           valueFrom:
             configMapKeyRef:
-              name: coworking-config
+              name: project3-config-map
               key: DB_USER
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:
-              name: coworking-config
+              name: project3-config-map
               key: DB_HOST
         - name: DB_PORT
           valueFrom:
             configMapKeyRef:
-              name: coworking-config
+              name: project3-config-map
               key: DB_PORT
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: coworking-config
+              name: project3-secrets
               key: password
       restartPolicy: Always
