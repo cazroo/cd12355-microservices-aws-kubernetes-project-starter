@@ -9,8 +9,8 @@ ENV DB_HOST=default_host
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy the current directory contents into the container at /usr/src/app
-COPY . .
+# Copy the contents of the analytics folder into the container at /usr/src/app
+COPY analytics/ .
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
