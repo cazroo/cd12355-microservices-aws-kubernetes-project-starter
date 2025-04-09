@@ -37,3 +37,4 @@ phases:
     - kubectl apply -f deployment.yaml
     - kubectl rollout restart deployment/coworking
     - kubectl get pods
+
