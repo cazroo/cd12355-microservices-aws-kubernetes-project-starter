@@ -28,6 +28,8 @@ spec:
       labels:
         service: coworking
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: coworking
           image: 031750745573.dkr.ecr.us-east-1.amazonaws.com/coworking-analytics-repository:latest
@@ -40,7 +42,7 @@ spec:
             timeoutSeconds: 2
           readinessProbe:
             httpGet:
-              path: "/readiness_check"
+              path: /readiness_check
               port: 5153
             initialDelaySeconds: 5
             timeoutSeconds: 5
@@ -74,5 +76,3 @@ spec:
                   name: project3-secrets
                   key: password
       restartPolicy: Always
-  imagePullSecrets:
-    - name: ecr-secret
