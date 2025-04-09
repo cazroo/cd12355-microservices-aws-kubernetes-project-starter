@@ -1,22 +1,26 @@
-# Use an official Python runtime as a parent image
 FROM python:3.10-slim-buster
 
 # Set environment variables
 ENV DB_USERNAME=myuser
-ENV DB_PASSWORD=mypassowrd
+ENV DB_PASSWORD=mypassword
 ENV DB_HOST=default_host
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+# Set the working directory
+WORKDIR /app
 
-# Copy the contents of the analytics folder into the container at /usr/src/app
-COPY analytics/ .
+# Copy only necessary files
+COPY analytics/ /app
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install system dependencies
+RUN apt update && \
+    apt install -y build-essential libpq-dev
 
-# Make port 5153 available to the world outside this container
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -r requirements.txt
+
+# Expose the port the app will run on
 EXPOSE 5153
 
-# Run app.py when the container launches
+# Set the default command to run your app
 CMD ["python", "app.py"]
