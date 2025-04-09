@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: coworking-config
 data:
-  DB_NAME: mydatabase
-  DB_USER: postgres
-  DB_HOST: postgres
+  DB_NAME: mydb
+  DB_USER: myuser
+  DB_HOST: postgresql-service
   DB_PORT: "5432"
