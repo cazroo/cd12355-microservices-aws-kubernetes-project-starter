@@ -1,101 +1,110 @@
-# Deployment Documentation for `cd12355-microservices-aws-kubernetes-project-starter`
+# Coworking Space Analytics Service
 
-This document outlines how to deploy, update, and maintain the `cd12355-microservices-aws-kubernetes-project-starter` application. It covers the tools and technologies in use and provides guidance for developers on how to release new changes to the app.
+## Getting Started
 
-## Technologies and Tools
+### Prerequisites
+- AWS account with appropriate permissions
+- AWS CLI configured with your credentials
+- `eksctl`, `kubectl`, and `psql` installed locally
+- Docker (for local development)
 
-### 1. **Kubernetes (K8s)**
-   - Kubernetes handles the deployment and management of services in a cloud environment. It automates scaling, self-healing, and monitoring of the application, ensuring everything runs smoothly.
-   - We manage everything using Kubernetes resources like **Deployments**, **Services**, and **ConfigMaps** to make sure our app stays up and running and updates smoothly.
+## Deployment Steps
 
-### 2. **Docker**
-   - Docker containers package the app and all its dependencies, so we can be sure it will work the same in any environment, whether it's local, test, or production.
-   - Docker images are built from **Dockerfiles** and stored in **Amazon ECR** (Elastic Container Registry) for easy versioning and access.
+### 1. Create an EKS Cluster
+```bash
+eksctl create cluster --name project3-cluster --region us-east-1 \
+  --nodegroup-name project3-nodes --node-type t3.small \
+  --nodes 1 --nodes-min 1 --nodes-max 2
 
-### 3. **AWS EKS (Elastic Kubernetes Service)**
-   - We’re running everything on **AWS EKS**, which makes it easy to manage our Kubernetes clusters in the cloud. AWS also provides an **Elastic Load Balancer (ELB)** to handle incoming traffic and direct it to the right pods.
+### 2. Configure Kubernetes Access
+```bash
+aws eks --region us-east-1 update-kubeconfig --name project3-cluster
+kubectl config current-context 
 
-### 4. **CI/CD Pipeline (Optional)**
-   - Although this document covers manual deployment, you can set up a **CI/CD pipeline** (like Jenkins or GitLab CI) to automate the process of building, testing, and deploying changes. This way, new commits to the repo can automatically trigger deployments to AWS.
+### 3. Configure Environment and Secrets
+```bash
+kubectl apply -f deployment/configmap.yaml
+kubectl apply -f deployment/secrets.yaml
 
-## Deployment Process
+### 4. Deploy PostgreSQL Database
+#### 4.1 Deploy Database Infrastructure
+```bash
+kubectl apply -f deployment/pv.yaml
+kubectl apply -f deployment/pvc.yaml
+kubectl apply -f deployment/postgresql-deployment.yaml
+kubectl apply -f deployment/postgresql-service.yaml
+#### 4.2 Seed Data
+```bash
+# Port forward to access database locally
+kubectl port-forward --address 127.0.0.1 service/postgresql-service 5433:5432 # & didn't work so I opened a new terminal after running this command
+export DB_PASSWORD=$(kubectl get secret project3-secrets -o jsonpath='{.data.password}' | base64 --decode)
+export DB_USER=$(kubectl get configMap project3-config-map -o jsonpath='{.data.DB_USER}')
+export DB_NAME=$(kubectl get configMap project3-config-map -o jsonpath='{.data.DB_NAME}')
+PGPASSWORD="$DB_PASSWORD" psql --host 127.0.0.1 -U ${DB_USER} -d ${DB_NAME} -p 5433 < ./db/1_create_tables.sql
+PGPASSWORD="$DB_PASSWORD" psql --host 127.0.0.1 -U ${DB_USER} -d ${DB_NAME} -p 5433 < ./db/2_seed_users.sql
+PGPASSWORD="$DB_PASSWORD" psql --host 127.0.0.1 -U ${DB_USER} -d ${DB_NAME} -p 5433 < ./db/3_seed_tokens.sql
 
-### 1. **Build and Push Docker Images**
-   - **Step 1:** Make the necessary code or configuration changes.
-   - **Step 2:** Build the Docker image for each service (e.g., `coworking`, `postgres`) with:
-     ```bash
-     docker build -t <aws_account_id>.dkr.ecr.<region>.amazonaws.com/my-app-repo:<version_tag> .
-     docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/my-app-repo:<version_tag>
-     ```
-   - **Step 3:** Push the image to **Amazon ECR** to store it.
+### 5. Deploy Application
+```bash
+kubectl apply -f deployment/coworking.yaml
 
-### 2. **Update Kubernetes Resources**
-   - **Step 1:** Once the image is in ECR, update the Kubernetes deployment YAML to use the new version of the image.
-   - **Step 2:** Apply the updated YAML to the cluster:
-     ```bash
-     kubectl apply -f deployment.yaml
-     ```
-   - **Step 3:** If any config or secrets need updating, modify the **ConfigMap** or **Secrets** and apply them similarly.
+### 6. Get Application URL
+```bash
+kubectl get service
 
-### 3. **Release New Builds**
-   - **Step 1:** Update the `version_tag` in the Kubernetes YAML to point to the new image version.
-   - **Step 2:** Apply the changes:
-     ```bash
-     kubectl apply -f coworking.yaml
-     ```
-   - **Step 3:** Kubernetes will handle the deployment, rolling out the new version of the service. You can monitor the pods to ensure everything is running fine:
-     ```bash
-     kubectl get pods
-     kubectl logs <pod_name>
-     ```
+### Access the application at app.py endpoints, e.g:
+   http://<EXTERNAL-IP>:5153/health-check
+   http://<EXTERNAL-IP>:5153/readiness_check
 
-### 4. **Database Updates**
-   - **Step 1:** If you're making changes to the database schema, make sure to apply any migrations or update data manually if necessary.
-   - **Step 2:** The app connects to **PostgreSQL** via environment variables (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`), which are configured in Kubernetes.
+### Access to my application (not an extensive list):
+   http://aa4e53a0cbeb24a2db7daee78b59d263-1902549326.us-east-1.elb.amazonaws.com:5153/health_check
+   http://aa4e53a0cbeb24a2db7daee78b59d263-1902549326.us-east-1.elb.amazonaws.com:5153/readiness_check
+   http://aa4e53a0cbeb24a2db7daee78b59d263-1902549326.us-east-1.elb.amazonaws.com:5153/api/reports/user_visits
+   http://aa4e53a0cbeb24a2db7daee78b59d263-1902549326.us-east-1.elb.amazonaws.com:5153/api/reports/daily_usage
 
-### 5. **Rollback to a Previous Version (if needed)**
-   - **Step 1:** If something goes wrong, you can roll back by updating the `version_tag` in the YAML file to the previous image version.
-   - **Step 2:** Apply the rollback:
-     ```bash
-     kubectl apply -f coworking.yaml
-     ```
-   - **Step 3:** Check the status of the pods and logs to confirm the rollback was successful.
+### 7. Configure Logging
+```bash
+aws iam attach-role-policy \
+  --role-name eksctl-project3-cluster-nodegroup-project3-nodes-NodeInstanceRole-XXXXXXXXXX \
+  --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+aws eks create-addon --addon-name amazon-cloudwatch-observability --cluster-name project3-cluster
 
-### 6. **Monitoring the Application**
-   - **Step 1:** You can use the following commands to check the status of your pods and their logs:
-     ```bash
-     kubectl get pods
-     kubectl describe pod <pod_name>
-     kubectl logs <pod_name> --previous
-     ```
-   - **Step 2:** Kubernetes health checks (liveness and readiness probes) are used to detect and resolve any issues automatically.
+## Stand-Out Suggestions
 
-## Key Kubernetes Resources
+### Resource Allocation Recommendations
+For production deployments, add these resource limits to your Kubernetes deployment YAML:
+```yaml
+resources:
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+  limits:
+    cpu: "1"
+    memory: "1Gi"
 
-1. **ConfigMap: `coworking-config`**
-   - Stores application configuration, like database connection details, which can be easily updated without changing code.
+### Optimal AWS Instance Type
+For production environments, we recommend:
+   - Database: r5.large (balanced memory/CPU for PostgreSQL)
+   - Application: t3.medium (burstable CPU for web service)
+   - Nodes: m5.large (general purpose worker nodes)
 
-2. **Secret: `coworking-secret`**
-   - Stores sensitive data like database credentials. Kubernetes ensures these values are securely handled.
+### Cost Saving Strategies
+- Cluster Autoscaler: Automatically scales node count based on demand.
+- Spot Instances: Use for non-production environments (70-90% savings).
+- Schedule Development: Shut down dev clusters nights/weekends using:
+   ```bash
+   eksctl scale nodegroup --cluster=project3-cluster --nodes=0 --name=project3-nodes
 
-3. **Service: `coworking`**
-   - The LoadBalancer service that makes the `coworking` app accessible externally.
+## Useful commands
 
-4. **Deployment: `coworking`**
-   - Manages the app's lifecycle, ensuring the correct number of pods are running and handling rolling updates when a new version is deployed.
+### Accessing Application Logs
+```bash 
+kubectl logs -f deployment/coworking
 
-## Stand Out Suggestions
+### Scaling the Application
+```bash
+kubectl scale deployment coworking --replicas=3
 
-1. **Specify reasonable Memory and CPU allocation in the Kubernetes deployment configuration**  
-   It's a good practice to specify **CPU and memory** requests and limits for each pod in your deployment configuration. This ensures that each pod gets the necessary resources and helps Kubernetes distribute resources effectively across the cluster.
-
-2. **In your README, specify what AWS instance type would be best used for the application? Why?**  
-   For this setup, a **t3.medium** EC2 instance is a good choice for the Kubernetes worker nodes. It strikes a balance between cost and performance, offering 2 vCPUs and 4GB of RAM. For more demanding workloads, you could consider **t3.large** instances.
-
-3. **In your README, provide your thoughts on how we can save on costs?**  
-   To save on AWS costs, consider using **Spot Instances** for your Kubernetes worker nodes. Spot Instances can significantly reduce the cost of EC2 instances, especially for non-critical workloads. Also, make sure you're properly sizing your pods with CPU and memory requests, as over-provisioning can lead to wasted resources and higher costs.
-
-## Conclusion
-
-This document gives you a high-level overview of how to deploy, manage, and update the `cd12355-microservices-aws-kubernetes-project-starter` application in AWS EKS using Docker and Kubernetes. With these steps, you can release new versions of the app, monitor performance, and roll back changes if needed. Just follow the instructions, and you'll be able to handle deployments like a pro!
-
+### Tearing Down Resources
+```bash
+eksctl delete cluster --name project3-cluster --region us-east-1
