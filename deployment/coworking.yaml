@@ -7,12 +7,12 @@ spec:
   selector:
     service: coworking
   ports:
-  - name: "5153"
-    protocol: TCP
-    port: 5153
-    targetPort: 5153
+    - name: "5153"
+      protocol: TCP
+      port: 5153
+      targetPort: 5153
 ---
-aapiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: coworking
@@ -29,50 +29,50 @@ spec:
         service: coworking
     spec:
       containers:
-      - name: coworking
-        image: 031750745573.dkr.ecr.us-east-1.amazonaws.com/coworking-analytics-repository:latest
-        imagePullPolicy: IfNotPresent
-        livenessProbe:
-          httpGet:
-            path: /health_check
-            port: 5153
-          initialDelaySeconds: 5
-          timeoutSeconds: 2
-        readinessProbe:
-          httpGet:
-            path: "/readiness_check"
-            port: 5153
-          initialDelaySeconds: 5
-          timeoutSeconds: 5
-        envFrom:
-        - configMapRef:
-            name: project3-config-map
-        env:
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: project3-config-map
-              key: DB_NAME
-        - name: DB_USERNAME
-          valueFrom:
-            configMapKeyRef:
-              name: project3-config-map
-              key: DB_USER
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: project3-config-map
-              key: DB_HOST
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: project3-config-map
-              key: DB_PORT
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: project3-secrets
-              key: password
+        - name: coworking
+          image: 031750745573.dkr.ecr.us-east-1.amazonaws.com/coworking-analytics-repository:latest
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /health_check
+              port: 5153
+            initialDelaySeconds: 5
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: "/readiness_check"
+              port: 5153
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          envFrom:
+            - configMapRef:
+                name: project3-config-map
+          env:
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: project3-config-map
+                  key: DB_NAME
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: project3-config-map
+                  key: DB_USER
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: project3-config-map
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: project3-config-map
+                  key: DB_PORT
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: project3-secrets
+                  key: password
       restartPolicy: Always
   imagePullSecrets:
-  - name: ecr-secret
+    - name: ecr-secret
