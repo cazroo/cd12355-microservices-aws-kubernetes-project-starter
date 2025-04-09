@@ -30,11 +30,17 @@ spec:
             secretKeyRef:
               name: project3-secrets
               key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
         ports:
         - containerPort: 5432
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgresql-storage
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "psql -U $POSTGRES_USER -d $POSTGRES_DB -c 'CREATE TABLE IF NOT EXISTS tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255), created_at TIMESTAMP, used_at TIMESTAMP); CREATE TABLE IF NOT EXISTS users (id VARCHAR(255) PRIMARY KEY, joined_at TIMESTAMP);'"]
       volumes:
       - name: postgresql-storage
         persistentVolumeClaim:
